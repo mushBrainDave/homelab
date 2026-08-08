@@ -1,0 +1,51 @@
+---
+# PocketBase — backend datastore for the forms/app stack. Native binary under
+# /opt/pocketbase, run as the `mushbrain` user on :8090, fronted by nginx (/pb/).
+# NOTE: the pb_data/ directory is STATE (not IaC) — back it up, don't commit it.
+- name: Ensure pocketbase dir
+  ansible.builtin.file:
+    path: /opt/pocketbase
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+  become: true
+
+- name: Download pocketbase
+  ansible.builtin.unarchive:
+    src: "https://github.com/pocketbase/pocketbase/releases/download/v{{ pocketbase_version }}/pocketbase_{{ pocketbase_version }}_linux_amd64.zip"
+    dest: /opt/pocketbase
+    remote_src: true
+    creates: /opt/pocketbase/pocketbase
+  become: true
+  notify: Restart pocketbase
+
+- name: Deploy systemd unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/pocketbase.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=PocketBase
+      After=network.target
+
+      [Service]
+      Type=simple
+      User={{ ansible_user }}
+      WorkingDirectory=/opt/pocketbase
+      ExecStart=/opt/pocketbase/pocketbase serve --http=0.0.0.0:8090
+      Restart=always
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+  become: true
+  notify: Restart pocketbase
+
+- name: Enable + start pocketbase
+  ansible.builtin.systemd:
+    name: pocketbase
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true

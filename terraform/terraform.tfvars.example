@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (git-ignored) and fill in, or export as TF_VAR_*.
+pve_endpoint         = "https://pve.lan:8006/"
+pve_node             = "pve"
+pve_api_token_id     = "terraform@pve!iac"
+pve_api_token_secret = "REPLACE_ME" # from secrets.sops.yaml -> proxmox
+datastore            = "local-lvm"

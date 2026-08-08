@@ -1,0 +1,21 @@
+# The `forms` image is built OUTSIDE this repo (a separate .NET app repo) and
+# published to the local Docker engine by the self-hosted GitHub Actions runner
+# on the ubuntu host. Tags are the source git SHA; `forms:latest` tracks newest.
+#
+# This compose file only *runs* that pre-built image. It does not build it.
+# Secrets (the Anthropic API key) come from .env, which is git-ignored.
+# Copy .env.example -> .env and fill it in (or render it from SOPS).
+services:
+  forms:
+    container_name: forms
+    image: forms:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_HTTP_PORTS=8080
+      - APP_UID=1654
+    env_file:
+      - .env   # ANTHROPIC_API_KEY lives here — never commit the real one

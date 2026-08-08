@@ -1,0 +1,38 @@
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    server_name ubuntu.lan ubuntuserver.tailb99a87.ts.net 100.95.188.96
+                foodbowl.lan cla.lan cod.lan forms.lan _;
+
+    root /var/www;
+    index index.html;
+
+    location = / {
+        default_type text/html;
+        return 200 '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ubuntuserver</title><style>body{font-family:system-ui,sans-serif;margin:2rem;line-height:1.5}a{display:block;margin:.75rem 0;font-size:1.25rem}</style></head><body><h1>ubuntuserver</h1><a href="/cla/">CLA controller</a><a href="/cod/">COD controller</a><a href="/forms/">Forms</a></body></html>';
+    }
+
+    include /etc/nginx/apps.d/*.conf;
+
+    location /pb/ {
+        proxy_pass http://127.0.0.1:8090/;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_buffering off;
+    }
+
+    location /mqtt {
+        proxy_pass http://192.168.0.49:9001/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade    $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+    }
+}

@@ -1,0 +1,63 @@
+---
+# nginx reverse proxy on the ubuntu host. Fronts pocketbase (/pb/), the forms
+# app (/forms/), the CLA/COD static apps, and the MQTT websocket (/mqtt).
+- name: Install nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: true
+  become: true
+
+- name: Ensure apps.d dir exists
+  ansible.builtin.file:
+    path: /etc/nginx/apps.d
+    state: directory
+    mode: "0755"
+  become: true
+
+- name: Deploy site configs
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/nginx/sites-available/{{ item }}"
+    mode: "0644"
+  loop:
+    - root
+    - pocketbase
+  become: true
+  notify: Reload nginx
+
+- name: Enable sites
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ item }}"
+    dest: "/etc/nginx/sites-enabled/{{ item }}"
+    state: link
+  loop:
+    - root
+    - pocketbase
+  become: true
+  notify: Reload nginx
+
+- name: Deploy apps.d snippets
+  ansible.builtin.copy:
+    src: "apps.d/{{ item }}"
+    dest: "/etc/nginx/apps.d/{{ item }}"
+    mode: "0644"
+  loop:
+    - foodbowl.conf
+    - forms.conf
+  become: true
+  notify: Reload nginx
+
+- name: Remove default site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  become: true
+  notify: Reload nginx
+
+- name: Enable + start nginx
+  ansible.builtin.service:
+    name: nginx
+    enabled: true
+    state: started
+  become: true

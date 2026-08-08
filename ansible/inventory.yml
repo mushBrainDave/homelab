@@ -1,0 +1,31 @@
+---
+# Fleet inventory. Hostnames resolve via the LAN (*.lan) — matches ~/.ssh/config.
+all:
+  vars:
+    ansible_user: mushbrain          # pve overrides below (mushbrainssh)
+    ansible_python_interpreter: /usr/bin/python3
+
+  children:
+    proxmox:
+      hosts:
+        pve:
+          ansible_host: pve.lan
+          ansible_user: mushbrainssh
+
+    docker_hosts:
+      hosts:
+        ubuntu:
+          ansible_host: ubuntu.lan     # VM 100 / 192.168.0.183
+
+    brokers:
+      hosts:
+        mqtt:
+          ansible_host: mqtt.lan       # LXC 101 / 192.168.0.49
+
+    dns:
+      hosts:
+        pihole:
+          ansible_host: pihole.lan     # LXC 102 / 192.168.0.50
+
+    # Home Assistant OS (VM 103 / 192.168.0.133) is an appliance — not managed
+    # by Ansible. See homeassistant/README.md.

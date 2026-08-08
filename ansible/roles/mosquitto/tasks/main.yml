@@ -1,0 +1,39 @@
+---
+# Mosquitto MQTT broker (LXC 101 / mqtt.lan / 192.168.0.49)
+# NOTE: currently anonymous. See secrets.sops.yaml -> mosquitto for the
+# credentialed variant when you're ready to lock it down.
+- name: Install mosquitto
+  ansible.builtin.apt:
+    name:
+      - mosquitto
+      - mosquitto-clients
+    state: present
+    update_cache: true
+  become: true
+
+- name: Deploy main mosquitto.conf
+  ansible.builtin.copy:
+    src: mosquitto.conf
+    dest: /etc/mosquitto/mosquitto.conf
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Restart mosquitto
+
+- name: Deploy websockets listener
+  ansible.builtin.copy:
+    src: websockets.conf
+    dest: /etc/mosquitto/conf.d/websockets.conf
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Restart mosquitto
+
+- name: Enable + start mosquitto
+  ansible.builtin.service:
+    name: mosquitto
+    enabled: true
+    state: started
+  become: true

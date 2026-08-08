@@ -1,0 +1,7 @@
+---
+- name: Restart mediamtx
+  ansible.builtin.systemd:
+    name: mediamtx
+    state: restarted
+    daemon_reload: true
+  become: true

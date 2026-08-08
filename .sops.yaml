@@ -1,0 +1,9 @@
+# SOPS + age config. Generate a key once:
+#   age-keygen -o ~/.config/sops/age/keys.txt
+# Put the PUBLIC key (age1...) below, then:
+#   sops secrets/secrets.sops.yaml   # edit encrypted
+#
+# Replace the placeholder recipient with your real age public key.
+creation_rules:
+  - path_regex: secrets/.*\.sops\.yaml$
+    age: age1REPLACE_WITH_YOUR_AGE_PUBLIC_KEY

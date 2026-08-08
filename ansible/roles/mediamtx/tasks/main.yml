@@ -1,0 +1,50 @@
+---
+# MediaMTX — native binary + systemd unit on the ubuntu host.
+# Restreams the Pi cameras (RTSP :8554) that Frigate consumes.
+- name: Download mediamtx release
+  ansible.builtin.get_url:
+    url: "https://github.com/bluenviron/mediamtx/releases/download/v{{ mediamtx_version }}/mediamtx_v{{ mediamtx_version }}_linux_amd64.tar.gz"
+    dest: /tmp/mediamtx.tar.gz
+    mode: "0644"
+  become: true
+
+- name: Extract mediamtx binary
+  ansible.builtin.unarchive:
+    src: /tmp/mediamtx.tar.gz
+    dest: /usr/local/bin/
+    remote_src: true
+    include: [mediamtx]
+    mode: "0755"
+  become: true
+  notify: Restart mediamtx
+
+- name: Ensure config dir
+  ansible.builtin.file:
+    path: /etc/mediamtx
+    state: directory
+    mode: "0755"
+  become: true
+
+- name: Deploy mediamtx.yml
+  ansible.builtin.template:
+    src: mediamtx.yml.j2
+    dest: /etc/mediamtx/mediamtx.yml
+    mode: "0644"
+  become: true
+  notify: Restart mediamtx
+
+- name: Deploy systemd unit
+  ansible.builtin.template:
+    src: mediamtx.service.j2
+    dest: /etc/systemd/system/mediamtx.service
+    mode: "0644"
+  become: true
+  notify: Restart mediamtx
+
+- name: Enable + start mediamtx
+  ansible.builtin.systemd:
+    name: mediamtx
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true

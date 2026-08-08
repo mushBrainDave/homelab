@@ -1,0 +1,49 @@
+# Curated from the live /etc/mediamtx/mediamtx.yml (defaults omitted for
+# maintainability). This reproduces the operational behaviour: anonymous
+# publish/read over RTSP on :8554, HTTP API disabled, catch-all path so the
+# Pi cameras (e.g. `zero1`) can publish to any path name.
+logLevel: info
+logDestinations: [stdout]
+
+# Anyone may publish/read/playback; API/metrics/pprof restricted to localhost.
+authMethod: internal
+authInternalUsers:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: publish
+        path:
+      - action: read
+        path:
+      - action: playback
+        path:
+  - user: any
+    pass:
+    ips: ['127.0.0.1', '::1']
+    permissions:
+      - action: api
+      - action: metrics
+      - action: pprof
+
+# API is OFF in the live config (that's why :9997 didn't answer during debugging).
+# Flip to `yes` if you want the REST API for path introspection.
+api: no
+apiAddress: :9997
+
+rtsp: yes
+rtspTransports: [udp, multicast, tcp]
+rtspAddress: :8554
+rtmp: yes
+hls: yes
+hlsVariant: lowLatency
+webrtc: yes
+webrtcAddress: :8889
+srt: yes
+
+pathDefaults:
+  source: publisher
+  record: no
+
+paths:
+  all_others:

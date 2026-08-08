@@ -1,0 +1,22 @@
+---
+# Baseline applied to every Linux host in the fleet.
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - vim
+      - htop
+      - ca-certificates
+    state: present
+    update_cache: true
+  become: true
+
+# Fleet sudo convention: password required for everything EXCEPT `apt update`.
+# (Matches the existing /etc/sudoers.d/*-apt drop-ins across the hosts.)
+- name: Passwordless-only-for-apt-update sudo drop-in
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/apt-update-nopasswd
+    mode: "0440"
+    validate: "visudo -cf %s"
+    content: "{{ ansible_user }} ALL=(ALL) NOPASSWD: /usr/bin/apt update\n"
+  become: true

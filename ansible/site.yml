@@ -1,0 +1,30 @@
+---
+# Full-fleet convergence. Run: ansible-playbook site.yml -K
+# Target one group: ansible-playbook site.yml -K --limit docker_hosts
+
+- name: Proxmox host
+  hosts: proxmox
+  roles:
+    - common
+    - proxmox
+
+- name: MQTT broker
+  hosts: brokers
+  roles:
+    - common
+    - mosquitto
+
+- name: DNS (Pi-hole)
+  hosts: dns
+  roles:
+    - common
+    - pihole
+
+- name: Ubuntu application host
+  hosts: docker_hosts
+  roles:
+    - common
+    - docker_host
+    - mediamtx
+    - pocketbase
+    - nginx

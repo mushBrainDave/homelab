@@ -1,0 +1,19 @@
+---
+# Proxmox host (pve) specifics.
+
+# Persist the NIC hardware-offload fix that stops the intermittent
+# "Corrupted MAC on input" SSH corruption to guests (notably the HAOS VM).
+# Applies at boot via a post-up hook on the vmbr0 bridge.
+- name: Persist nic0 offload-disable on vmbr0
+  ansible.builtin.lineinfile:
+    path: /etc/network/interfaces
+    insertafter: '^iface vmbr0 inet'
+    line: "        post-up /usr/sbin/ethtool -K nic0 gso off gro off tso off tx off rx off sg off"
+    state: present
+  become: true
+
+- name: Apply offload settings now (idempotent, harmless if already set)
+  ansible.builtin.command:
+    cmd: ethtool -K nic0 gso off gro off tso off tx off rx off sg off
+  become: true
+  changed_when: false

@@ -1,0 +1,3 @@
+# Keep LF endings — these files run on Linux (bash, YAML, configs, systemd units)
+* text=auto eol=lf
+*.ps1 text eol=crlf

@@ -1,0 +1,67 @@
+detectors:
+  onnx:
+    type: onnx
+
+model:
+  model_type: yolo-generic
+  width: 320
+  height: 320
+  input_tensor: nchw
+  input_dtype: float
+  path: /config/model_cache/yolov9-t-320.onnx
+  labelmap_path: /labelmap/coco-80.txt
+
+objects:
+  track:
+    - person
+    - cat
+
+mqtt:
+  enabled: true
+  host: 192.168.0.49
+  port: 1883
+
+record:
+  enabled: true
+  continuous:
+    days: 0
+  motion:
+    days: 3
+  alerts:
+    pre_capture: 30
+    post_capture: 30
+    retain:
+      days: 3
+      mode: motion
+  detections:
+    pre_capture: 30
+    post_capture: 30
+    retain:
+      days: 3
+      mode: motion
+
+snapshots:
+  enabled: true
+  timestamp: true
+  retain:
+    default: 3
+
+cameras:
+  zero1:
+    ffmpeg:
+      hwaccel_args: preset-nvidia-h264
+      inputs:
+        - path: rtsp://ubuntu.lan:8554/zero1
+          roles: [record, detect]
+    detect:
+      enabled: true
+      width: 1280
+      height: 720
+      fps: 5
+    motion:
+      enabled: true
+
+detect:
+  enabled: true
+
+version: 0.17-0

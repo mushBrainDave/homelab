@@ -1,0 +1,8 @@
+---
+# Versions pinned for reproducible installs. Bump deliberately.
+mediamtx_version: "1.19.3"
+pocketbase_version: "0.39.10"
+
+# Network facts (documentation + template use)
+mqtt_broker_ip: "192.168.0.49"
+mqtt_broker_port: 1883

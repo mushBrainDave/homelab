@@ -1,0 +1,23 @@
+---
+# Pi-hole v6 (LXC 102 / pihole.lan / 192.168.0.50).
+# Pi-hole is largely stateful and self-managing; full config lives in
+# /etc/pihole/pihole.toml (root:pihole 0640). Rather than fight its installer,
+# the pragmatic IaC approach is:
+#   1. Reinstall via the official script (below) on a fresh container.
+#   2. Restore settings from a Teleporter backup checked into secrets/ or a
+#      backup store (adlists, whitelist, DHCP, etc.).
+#
+# To capture current config for the repo (run on the pihole host, needs root):
+#   sudo pihole-FTL --teleporter        # writes a pi-hole_*.zip Teleporter export
+#
+- name: Install Pi-hole (unattended)
+  ansible.builtin.shell:
+    cmd: curl -sSL https://install.pi-hole.net | bash /dev/stdin --unattended
+    creates: /usr/local/bin/pihole
+  become: true
+
+- name: Reminder — restore Teleporter backup
+  ansible.builtin.debug:
+    msg: >-
+      Restore adlists/allow/deny/DHCP from your Teleporter export via the web UI
+      (Settings > Teleporter) or `pihole-FTL --teleporter <file.zip>`.

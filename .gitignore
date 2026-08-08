@@ -1,0 +1,28 @@
+# ---- Secrets: never commit decrypted material ----
+*.env
+.env
+!*.env.example
+secrets/*.yaml
+!secrets/*.example.yaml
+*.key
+*.pem
+age.key
+*.decrypted
+
+# ---- Terraform ----
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# ---- Ansible ----
+*.retry
+ansible/inventory_local.yml
+
+# ---- Editor / OS ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
