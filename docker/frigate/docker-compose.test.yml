@@ -1,0 +1,25 @@
+# STANDALONE test compose (not an override) for a box WITHOUT an NVIDIA GPU.
+# Uses the plain `stable` image and the OpenVINO CPU detector — no nvidia
+# runtime, no GPU passthrough required.
+#
+# Deploy on the test host:
+#   cp config/config.test.yml config/config.yml
+#   docker compose -f docker-compose.test.yml up -d
+#
+# If you DID pass through / bind-mount the Intel iGPU, uncomment the devices
+# block and switch the detector to device: GPU + hwaccel preset-vaapi in the config.
+services:
+  frigate:
+    container_name: frigate
+    image: ghcr.io/blakeblackshear/frigate:stable
+    restart: unless-stopped
+    shm_size: "256mb"
+    # devices:
+    #   - /dev/dri/renderD128:/dev/dri/renderD128   # Intel iGPU (VAAPI + OpenVINO-GPU)
+    ports:
+      - "5000:5000"
+      - "8555:8554"
+    volumes:
+      - ./config:/config
+      - /recordings:/media/frigate
+      - /etc/localtime:/etc/localtime:ro

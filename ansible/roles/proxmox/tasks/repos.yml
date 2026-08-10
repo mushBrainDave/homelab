@@ -1,0 +1,55 @@
+---
+# Configure Proxmox VE APT repositories.
+#
+# A fresh Proxmox install ships with the subscription-only "enterprise" repos
+# enabled, which return 401 Unauthorized without a paid key and abort every
+# `apt update`. This fully disables them and enables the free
+# pve-no-subscription repo instead.
+#
+# MUST run before any `apt update` (see the common role) — hence it is invoked
+# from site.yml as a pre_task, ahead of the common role.
+#
+# Format is release-dependent and derived from the host's own Debian version:
+#   - PVE 9 / Debian 13 (trixie)  -> deb822 *.sources
+#   - PVE 8 / Debian 12 (bookworm) -> classic *.list
+# The ceph enterprise repo is disabled and NOT replaced (this fleet is not
+# running Ceph); add a ceph no-subscription source here if that changes.
+
+- name: Fully disable enterprise repos (classic .list format)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/pve-enterprise.list
+    - /etc/apt/sources.list.d/ceph.list
+  become: true
+
+- name: Fully disable enterprise repos (deb822 .sources format)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/pve-enterprise.sources
+    - /etc/apt/sources.list.d/ceph.sources
+  become: true
+
+- name: Enable pve-no-subscription repo (deb822, PVE 9+ / trixie+)
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/pve-no-subscription.sources
+    mode: "0644"
+    content: |
+      Types: deb
+      URIs: http://download.proxmox.com/debian/pve
+      Suites: {{ ansible_distribution_release }}
+      Components: pve-no-subscription
+      Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+  become: true
+  when: ansible_distribution_major_version | int >= 13
+
+- name: Enable pve-no-subscription repo (classic .list, PVE 8 / bookworm)
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/pve-no-subscription.list
+    mode: "0644"
+    content: "deb http://download.proxmox.com/debian/pve {{ ansible_distribution_release }} pve-no-subscription\n"
+  become: true
+  when: ansible_distribution_major_version | int <= 12

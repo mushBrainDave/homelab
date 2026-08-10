@@ -1,0 +1,32 @@
+---
+# TEST inventory — point at the guests on the spare Proxmox box.
+# Run:  ansible-playbook -i inventory_test.yml site.yml -K --limit <group>
+# Fill in the DHCP/static IPs the test guests get.
+all:
+  vars:
+    ansible_user: mushbrain
+    ansible_python_interpreter: /usr/bin/python3
+    # Test guests are fresh — accept their host keys on first connect:
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=accept-new"
+
+  children:
+    proxmox:
+      hosts:
+        pvetest:
+          ansible_host: 192.168.0.XXX   # the test Proxmox host itself
+          ansible_user: root
+
+    docker_hosts:
+      hosts:
+        ubuntu-test:
+          ansible_host: 192.168.0.XXX   # Terraform-created VM 900
+
+    brokers:
+      hosts:
+        mqtt-test:
+          ansible_host: 192.168.0.XXX   # test mosquitto LXC
+
+    dns:
+      hosts:
+        pihole-test:
+          ansible_host: 192.168.0.XXX   # test pihole LXC (optional to test)

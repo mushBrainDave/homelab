@@ -1,0 +1,30 @@
+# TEST environment — the spare 10th-gen i5 / 16 GB Proxmox box.
+# Usage:
+#   cd terraform
+#   tofu init
+#   tofu plan  -var-file=environments/test.tfvars
+#   tofu apply -var-file=environments/test.tfvars
+#
+# Fill in the endpoint, node name (whatever you named the host at install),
+# and API token. Secrets ideally come from SOPS via TF_VAR_* env, not here.
+
+pve_endpoint = "https://192.168.0.192:8006/" # test box IP
+# MUST equal the test host's short hostname. It's currently "pve" (confusingly
+# collides with prod's SSH alias) — rename it to "pvetest" while the box is empty
+# (see TESTING.md), then use "pvetest". If you DON'T rename, set this to "pve".
+pve_node     = "pvetest"
+datastore    = "local-lvm"                    # ext4/LVM-thin (NOT zfs on 16 GB)
+
+pve_api_token_id     = "terraform@pve!iac"
+# pve_api_token_secret = supply via:  export TF_VAR_pve_api_token_secret=...
+
+# ── Fresh Ubuntu test VM (created by Terraform) ─────────────────────────────
+create_test_vm    = true
+test_vm_id        = 900
+test_vm_cores     = 2
+test_vm_memory    = 4096  # 4 GB — plenty; leaves room for the LXCs + HAOS
+test_vm_disk_size = 24
+
+ci_user           = "mushbrain"
+# Paste the CONTENTS of your public key (e.g. ~/.ssh/id_ed25519.pub):
+ci_ssh_public_key = "ssh-ed25519 AAAA...REPLACE_ME you@host"

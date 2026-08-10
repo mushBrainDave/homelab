@@ -1,0 +1,62 @@
+# Frigate TEST config — no NVIDIA. OpenVINO detector on CPU (efficient, needs no
+# /dev/dri) and software decode. Points MQTT at the test broker.
+#
+# To use the Intel iGPU instead: set detector device: GPU, and add
+#   ffmpeg: { hwaccel_args: preset-vaapi }
+# to the camera (requires the /dev/dri device mount in docker-compose.test.yml).
+
+mqtt:
+  enabled: true
+  host: mqtt.lan        # the test-env mosquitto (adjust to test broker IP/host)
+  port: 1883
+
+detectors:
+  ov:
+    type: openvino
+    device: CPU
+
+model:
+  width: 300
+  height: 300
+  input_tensor: nhwc
+  input_pixel_format: bgr
+  path: /openvino-model/ssdlite_mobilenet_v2.xml
+  labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+
+objects:
+  track:
+    - person
+    - cat
+
+record:
+  enabled: true
+  detections:
+    retain:
+      days: 1
+      mode: motion
+  alerts:
+    retain:
+      days: 1
+      mode: motion
+
+snapshots:
+  enabled: true
+
+cameras:
+  test_cam:
+    ffmpeg:
+      # No hwaccel (CPU decode) for the GPU-less test. Point this at ANY reachable
+      # RTSP source. Options:
+      #   - a real camera / your mediamtx restream
+      #   - a looped sample:  publish a file to mediamtx with runOnInit + ffmpeg
+      #   - a public demo RTSP stream
+      inputs:
+        - path: rtsp://REPLACE_ME:8554/test_cam
+          roles: [detect, record]
+    detect:
+      enabled: true
+      width: 1280
+      height: 720
+      fps: 5
+
+version: 0.17-0

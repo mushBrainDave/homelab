@@ -4,12 +4,16 @@
 # blind, or it will try to CREATE duplicates. Import the live guests into state
 # first, then apply only shows drift:
 #
-#   terraform import proxmox_virtual_environment_container.mqtt   pve/101
-#   terraform import proxmox_virtual_environment_container.pihole pve/102
-#   terraform import proxmox_virtual_environment_vm.ubuntu        pve/100
+# The prod node is named `mushbrain` (its hostname), NOT `pve`:
+#   terraform import proxmox_virtual_environment_container.mqtt   mushbrain/101
+#   terraform import proxmox_virtual_environment_container.pihole mushbrain/102
+#   terraform import proxmox_virtual_environment_vm.ubuntu        mushbrain/100
 #
-# The HAOS VM (103) is created from a downloaded image, not cleanly declarative —
-# it lives in scripts/haos-vm-create.sh instead of Terraform.
+# The HAOS VM is created from a downloaded .qcow2.xz image, not cleanly
+# declarative (Terraform can't decompress .xz), so it lives in
+# scripts/haos-vm-create.sh instead of Terraform:
+#   prod:  ./scripts/haos-vm-create.sh 103 15.2 BC:24:11:CF:95:10
+#   test:  ./scripts/haos-vm-create.sh 104 15.2      (auto MAC on pvetest)
 # ─────────────────────────────────────────────────────────────────────────────
 
 resource "proxmox_virtual_environment_container" "mqtt" {

@@ -77,6 +77,14 @@ Consumers:
    `docker compose up -d` in each `stacks/*` dir (Ansible syncs them there).
 5. **Home Assistant** — restore latest HA Backup, or follow `homeassistant/README.md`.
 
+## Testing
+
+Validate changes on a throwaway Proxmox box before touching prod — see
+[TESTING.md](TESTING.md). The `test` Terraform profile
+(`terraform/environments/test.tfvars.example`) provisions fresh guests + a GPU-less
+Frigate (`docker/frigate/*.test.yml`, OpenVINO CPU) so the whole pipeline can be
+exercised end-to-end and torn down with `tofu destroy`.
+
 ## What is NOT in git (restore from backups)
 
 - Frigate recordings + `frigate.db`, HA recorder DB, Pi-hole query DB, PocketBase `pb_data/`.

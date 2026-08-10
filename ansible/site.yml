@@ -4,6 +4,14 @@
 
 - name: Proxmox host
   hosts: proxmox
+  # Configure the no-subscription APT repos FIRST — the common role runs
+  # `apt update`, which fails on a fresh host while the enterprise repos are
+  # still enabled (401 Unauthorized).
+  pre_tasks:
+    - name: Configure Proxmox APT repositories
+      ansible.builtin.import_role:
+        name: proxmox
+        tasks_from: repos
   roles:
     - common
     - proxmox
