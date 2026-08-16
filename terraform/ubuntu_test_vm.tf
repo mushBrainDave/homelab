@@ -4,14 +4,15 @@
 # target that Ansible then converges — the true end-to-end IaC test.
 
 resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_img" {
-  count        = var.create_test_vm ? 1 : 0
+  # Shared by the prod ubuntu VM and the test VM (both import their boot disk
+  # from it), so it is not env-gated.
   # Must be "import" (not "iso") so it can be used as a VM disk import source on
   # PVE 8.2+/9. Requires the `import` content type enabled on the datastore
   # (local already has it). content iso -> disk import is rejected as wrong type.
   content_type = "import"
   datastore_id = "local"
   node_name    = var.pve_node
-  url = var.ubuntu_cloud_image_url
+  url          = var.ubuntu_cloud_image_url
   # Ubuntu's cloud ".img" is actually QCOW2. The `import` content type rejects a
   # `.img` extension ("invalid filename or wrong extension"), so store it as
   # `.qcow2` — matching its real format — to pass Proxmox's extension check.
@@ -44,7 +45,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_test" {
 
   disk {
     datastore_id = var.datastore
-    import_from  = proxmox_virtual_environment_download_file.ubuntu_cloud_img[0].id
+    import_from  = proxmox_virtual_environment_download_file.ubuntu_cloud_img.id
     interface    = "scsi0"
     size         = var.test_vm_disk_size
   }

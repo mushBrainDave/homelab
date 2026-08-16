@@ -1,0 +1,36 @@
+# PROD environment (committed — no secrets; token comes from the env var
+# TF_VAR_pve_api_token_secret). Copy to the local working file, then use it:
+#   cp environments/prod.tfvars.example environments/prod.tfvars
+# Two uses:
+#   • Adopt live prod:   tofu import ... (see main.tf header), then
+#                        tofu plan -var-file=environments/prod.tfvars  (expect no changes)
+#   • Fresh on new HW:   tofu apply -var-file=environments/prod.tfvars
+
+pve_endpoint = "https://pve.lan:8006/" # new box: swap for its IP:8006
+pve_node     = "mushbrain"             # = the node's short hostname
+datastore    = "local-lvm"
+
+pve_api_token_id = "terraform@pve!iac"
+# pve_api_token_secret -> export TF_VAR_pve_api_token_secret='...'
+
+create_test_vm = false # prod builds the real ubuntu VM 100 (not the test VM 900)
+
+# Static guest addressing — matches live prod (LXC 101=pihole/.50, 102=mqtt/.49).
+pihole_ip   = "192.168.0.50/24"
+mqtt_ip     = "192.168.0.49/24"
+ubuntu_ip   = "192.168.0.183/24"
+lan_gateway = "192.168.0.1"
+dns_servers = ["192.168.0.1"]
+
+# NVIDIA RTX 5050 passthrough for Frigate. Before a FRESH apply, create a
+# Datacenter > Resource Mappings (PCI) entry named "frigate-gpu" covering
+# 0000:02:00.0 + 0000:02:00.1. Set "" to skip passthrough.
+gpu_mapping = "frigate-gpu"
+
+ci_user           = "mushbrain"
+ci_ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA6dntc1oqA+iGUhgL93IBJZmnw25OkBQBnnXKkpAjpx mushbrain@ubuntuserver"
+
+# LXC template for FRESH container builds. Download on the node first:
+#   pveam update && pveam download local debian-12-standard_12.12-1_amd64.tar.zst
+# (Ignored when adopting existing prod — operating_system is in ignore_changes.)
+lxc_template = "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"

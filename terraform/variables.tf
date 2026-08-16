@@ -27,7 +27,7 @@ variable "datastore" {
 }
 
 variable "lxc_template" {
-  type = string
+  type        = string
   description = <<-EOT
     LXC template volid for the mqtt/pihole containers. PROD adopts these
     containers import-only, so the template is never validated there and the
@@ -35,7 +35,7 @@ variable "lxc_template" {
     this with the EXACT downloaded name (see `pveam list local`), e.g.
     local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst
   EOT
-  default = "local:vztmpl/debian-12-standard_amd64.tar.zst"
+  default     = "local:vztmpl/debian-12-standard_amd64.tar.zst"
 }
 
 # ── Test environment toggles ────────────────────────────────────────────────
@@ -96,4 +96,41 @@ variable "ci_ssh_public_key" {
 variable "ubuntu_cloud_image_url" {
   type    = string
   default = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+}
+
+# ── Prod / shared guest addressing & passthrough ────────────────────────────
+variable "lan_gateway" {
+  type        = string
+  description = "Default gateway for static guest IPs."
+  default     = "192.168.0.1"
+}
+
+variable "dns_servers" {
+  type        = list(string)
+  description = "DNS servers for statically-addressed guests (router by default; add pihole once it exists)."
+  default     = ["192.168.0.1"]
+}
+
+variable "mqtt_ip" {
+  type        = string
+  description = "Static CIDR for the mqtt container (e.g. 192.168.0.49/24) or \"dhcp\"."
+  default     = "dhcp"
+}
+
+variable "pihole_ip" {
+  type        = string
+  description = "Static CIDR for the pihole container (e.g. 192.168.0.50/24) or \"dhcp\"."
+  default     = "dhcp"
+}
+
+variable "ubuntu_ip" {
+  type        = string
+  description = "Static CIDR for the prod ubuntu VM (e.g. 192.168.0.183/24) or \"dhcp\"."
+  default     = "dhcp"
+}
+
+variable "gpu_mapping" {
+  type        = string
+  description = "Proxmox Datacenter PCI resource-mapping name for GPU passthrough on the prod ubuntu VM (create it under Datacenter > Resource Mappings). Empty = no passthrough (e.g. test)."
+  default     = ""
 }
