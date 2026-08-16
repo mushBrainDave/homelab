@@ -16,9 +16,16 @@
   become: true
 
 - name: Add Docker apt repo
-  ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: [deb]
+    uris: "https://download.docker.com/linux/ubuntu"
+    suites: ["{{ ansible_facts['distribution_release'] }}"]
+    components: [stable]
+    architectures: [amd64]
+    signed_by: /etc/apt/keyrings/docker.asc
     state: present
+    enabled: true
   become: true
 
 - name: Install Docker engine + compose plugin
@@ -34,6 +41,15 @@
 
 # The compose files are synced from this repo. `frigate` is a public image;
 # `forms` is a locally-built image published by the Actions runner (see README).
+- name: Ensure stack directories exist
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/stacks/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - frigate
+    - forms
+
 - name: Sync compose stacks to the host
   ansible.posix.synchronize:
     src: "../../docker/{{ item }}/"

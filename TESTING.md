@@ -43,6 +43,24 @@ without touching production.
    pveum user token add terraform@pve iac --privsep 0   # copy the secret
    ```
 
+## Running from WSL (Windows control node)
+
+Ansible has no native Windows control node — run it from WSL (Ubuntu). One gotcha:
+Windows drives mount into WSL as world-writable (`0777`), and Ansible **refuses to
+load `ansible.cfg` from a world-writable dir** for security. Symptom: warnings like
+*"ignoring it as an ansible.cfg source"* and *"No inventory was parsed"* — meaning
+`inventory =`, `become_ask_pass`, etc. are silently dropped and you get Ansible's
+built-in defaults instead.
+
+Fix: point `ANSIBLE_CONFIG` at the file explicitly (an explicit path bypasses the
+world-writable check). Add to `~/.bashrc`:
+```bash
+export ANSIBLE_CONFIG=/mnt/c/Users/<you>/source/repos/homelab/ansible/ansible.cfg
+```
+Also note WSL can't apply Unix perms to `/mnt/c` files, so SSH keys there trip the
+"unprotected private key" error — keep keys in `~/.ssh/` (chmod `0600`) inside WSL.
+(Cleaner long-term: check the repo out on the WSL native filesystem, e.g. `~/homelab`.)
+
 ## 1. Static validation (do first — no infra, run from anywhere)
 
 ```bash

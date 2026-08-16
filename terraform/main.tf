@@ -7,7 +7,7 @@
 # The prod node is named `mushbrain` (its hostname), NOT `pve`:
 #   terraform import proxmox_virtual_environment_container.mqtt   mushbrain/101
 #   terraform import proxmox_virtual_environment_container.pihole mushbrain/102
-#   terraform import proxmox_virtual_environment_vm.ubuntu        mushbrain/100
+#   terraform import 'proxmox_virtual_environment_vm.ubuntu[0]'   mushbrain/100
 #
 # The HAOS VM is created from a downloaded .qcow2.xz image, not cleanly
 # declarative (Terraform can't decompress .xz), so it lives in
@@ -20,6 +20,11 @@ resource "proxmox_virtual_environment_container" "mqtt" {
   node_name = var.pve_node
   vm_id     = 101
   tags      = ["iac", "mqtt"]
+
+  network_interface {
+    name   = "eth0"
+    bridge = "vmbr0"
+  }
 
   initialization {
     hostname = "mqtt"
@@ -37,7 +42,7 @@ resource "proxmox_virtual_environment_container" "mqtt" {
   }
 
   operating_system {
-    template_file_id = "local:vztmpl/debian-12-standard_amd64.tar.zst"
+    template_file_id = var.lxc_template
     type             = "debian"
   }
 
@@ -48,6 +53,11 @@ resource "proxmox_virtual_environment_container" "pihole" {
   node_name = var.pve_node
   vm_id     = 102
   tags      = ["iac", "pihole"]
+
+  network_interface {
+    name   = "eth0"
+    bridge = "vmbr0"
+  }
 
   initialization {
     hostname = "pihole"
@@ -65,7 +75,7 @@ resource "proxmox_virtual_environment_container" "pihole" {
   }
 
   operating_system {
-    template_file_id = "local:vztmpl/debian-12-standard_amd64.tar.zst"
+    template_file_id = var.lxc_template
     type             = "debian"
   }
 
@@ -76,6 +86,10 @@ resource "proxmox_virtual_environment_container" "pihole" {
 # Frigate — treat as import-only. Specs reflect the live guest:
 #   9 vCPU, 8 GB RAM (balloon floor 2 GB), disks 64 GB + 32 GB on local-lvm.
 resource "proxmox_virtual_environment_vm" "ubuntu" {
+  # PROD-only: this is the live prod ubuntu host (import-only). On the TEST env
+  # (create_test_vm = true) we use the fresh ubuntu-test VM 900 instead, so skip
+  # this one — otherwise apply creates a stray diskless VM 100 on the test box.
+  count     = var.create_test_vm ? 0 : 1
   node_name = var.pve_node
   vm_id     = 100
   name      = "ubuntu"

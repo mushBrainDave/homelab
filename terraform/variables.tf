@@ -26,6 +26,18 @@ variable "datastore" {
   default     = "local-lvm"
 }
 
+variable "lxc_template" {
+  type = string
+  description = <<-EOT
+    LXC template volid for the mqtt/pihole containers. PROD adopts these
+    containers import-only, so the template is never validated there and the
+    version-less default is fine. TEST creates them fresh, so it must override
+    this with the EXACT downloaded name (see `pveam list local`), e.g.
+    local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst
+  EOT
+  default = "local:vztmpl/debian-12-standard_amd64.tar.zst"
+}
+
 # ── Test environment toggles ────────────────────────────────────────────────
 # On the spare test Proxmox host these create a fresh, bootable Ubuntu VM so
 # Ansible has a Terraform-provisioned target. Off by default so prod apply
@@ -55,6 +67,18 @@ variable "test_vm_disk_size" {
   type        = number
   description = "GB"
   default     = 20
+}
+
+variable "test_vm_ip" {
+  type        = string
+  description = "Test VM address as CIDR (e.g. 192.168.0.90/24) for a static IP, or \"dhcp\". Static avoids DHCP-lease collisions."
+  default     = "dhcp"
+}
+
+variable "test_vm_gateway" {
+  type        = string
+  description = "Default gateway for the test VM when test_vm_ip is a static CIDR; ignored when dhcp."
+  default     = "192.168.0.1"
 }
 
 variable "ci_user" {

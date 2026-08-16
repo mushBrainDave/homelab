@@ -5,12 +5,18 @@
 
 resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_img" {
   count        = var.create_test_vm ? 1 : 0
-  content_type = "iso"
+  # Must be "import" (not "iso") so it can be used as a VM disk import source on
+  # PVE 8.2+/9. Requires the `import` content type enabled on the datastore
+  # (local already has it). content iso -> disk import is rejected as wrong type.
+  content_type = "import"
   datastore_id = "local"
   node_name    = var.pve_node
-  url          = var.ubuntu_cloud_image_url
-  file_name    = "noble-server-cloudimg-amd64.img"
-  overwrite    = false
+  url = var.ubuntu_cloud_image_url
+  # Ubuntu's cloud ".img" is actually QCOW2. The `import` content type rejects a
+  # `.img` extension ("invalid filename or wrong extension"), so store it as
+  # `.qcow2` — matching its real format — to pass Proxmox's extension check.
+  file_name = "noble-server-cloudimg-amd64.qcow2"
+  overwrite = false
 }
 
 resource "proxmox_virtual_environment_vm" "ubuntu_test" {
@@ -20,7 +26,12 @@ resource "proxmox_virtual_environment_vm" "ubuntu_test" {
   name      = "ubuntu-test"
   tags      = ["iac", "test"]
 
-  agent { enabled = true }
+  # The stock Ubuntu cloud image ships no qemu-guest-agent, so leaving this on
+  # makes the provider hang ~30 min waiting for the agent, then fail. Off for the
+  # test VM — the guest still boots, runs cloud-init (user + SSH key + DHCP), and
+  # is reachable; find its IP via the DHCP leases. To re-enable the agent, first
+  # install it via a cloud-init vendor-data snippet.
+  agent { enabled = false }
 
   cpu {
     cores = var.test_vm_cores
@@ -56,7 +67,15 @@ resource "proxmox_virtual_environment_vm" "ubuntu_test" {
   initialization {
     datastore_id = var.datastore
     ip_config {
-      ipv4 { address = "dhcp" }
+      ipv4 {
+        address = var.test_vm_ip
+        gateway = var.test_vm_ip == "dhcp" ? null : var.test_vm_gateway
+      }
+    }
+    # A static IP means no DHCP-provided resolver, so set DNS explicitly
+    # (pihole first, router fallback) or apt/name resolution fails in the guest.
+    dns {
+      servers = ["192.168.0.50", "192.168.0.1"]
     }
     user_account {
       username = var.ci_user

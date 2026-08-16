@@ -13,13 +13,13 @@ all:
     proxmox:
       hosts:
         pvetest:
-          ansible_host: 192.168.0.XXX   # the test Proxmox host itself
+          ansible_host: pve.test        # resolves via pihole to the test host
           ansible_user: root
 
     docker_hosts:
       hosts:
         ubuntu-test:
-          ansible_host: 192.168.0.XXX   # Terraform-created VM 900
+          ansible_host: 192.168.0.90     # Terraform-created VM 900 (static)
 
     brokers:
       hosts:

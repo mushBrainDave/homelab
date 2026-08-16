@@ -11,6 +11,12 @@
     mode: "0755"
   become: true
 
+- name: Ensure unzip is present (unarchive needs it for the .zip release)
+  ansible.builtin.apt:
+    name: unzip
+    state: present
+  become: true
+
 - name: Download pocketbase
   ansible.builtin.unarchive:
     src: "https://github.com/pocketbase/pocketbase/releases/download/v{{ pocketbase_version }}/pocketbase_{{ pocketbase_version }}_linux_amd64.zip"
