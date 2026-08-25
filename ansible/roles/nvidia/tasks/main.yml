@@ -1,0 +1,105 @@
+---
+# Installs the in-guest NVIDIA stack on the Frigate host: the proprietary driver,
+# the nvidia-container-toolkit, and Docker's `nvidia` runtime. This is the piece
+# Terraform GPU *passthrough* does NOT provide — passthrough exposes the card to
+# the VM, but nothing inside the guest installs the driver/toolkit. Without this
+# role, Frigate's `runtime: nvidia` container (docker/frigate/docker-compose.yml)
+# fails to start on freshly rebuilt hardware.
+#
+# Requires Docker to be installed first (docker_host role runs before this one).
+# Gated in site.yml on `nvidia_gpu`, so it only runs on the GPU host and is a
+# no-op on GPU-less boxes like the test env.
+
+- name: Assert an x86_64 host
+  ansible.builtin.assert:
+    that: ansible_facts['architecture'] == "x86_64"
+    fail_msg: "The nvidia role supports x86_64 hosts only (got {{ ansible_facts['architecture'] }})."
+
+# ── NVIDIA driver (from the official CUDA apt repo) ──────────────────────────
+- name: Check whether the NVIDIA CUDA apt repo is already registered
+  ansible.builtin.stat:
+    path: "/etc/apt/sources.list.d/cuda-{{ nvidia_cuda_repo_distro }}-x86_64.list"
+  register: nvidia_cuda_repo
+
+- name: Download the NVIDIA CUDA repo keyring package
+  ansible.builtin.get_url:
+    url: "{{ nvidia_cuda_keyring_url }}"
+    dest: /tmp/cuda-keyring.deb
+    mode: "0644"
+  become: true
+  when: not nvidia_cuda_repo.stat.exists
+
+- name: Register the NVIDIA CUDA apt repo (installs cuda-keyring)
+  ansible.builtin.apt:
+    deb: /tmp/cuda-keyring.deb
+  become: true
+  when: not nvidia_cuda_repo.stat.exists
+
+- name: Install the NVIDIA driver
+  ansible.builtin.apt:
+    name: "{{ nvidia_driver_package }}"
+    state: present
+    update_cache: true
+  become: true
+
+# ── nvidia-container-toolkit + Docker runtime ────────────────────────────────
+- name: Ensure the apt keyrings directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+  become: true
+
+- name: Add the NVIDIA container-toolkit GPG key
+  ansible.builtin.get_url:
+    url: https://nvidia.github.io/libnvidia-container/gpgkey
+    dest: /etc/apt/keyrings/nvidia-container-toolkit.asc
+    mode: "0644"
+  become: true
+
+# libnvidia-container is a flat repo: `deb [signed-by=...] <uri> /` (suite "/",
+# no components).
+- name: Add the NVIDIA container-toolkit apt repo
+  ansible.builtin.deb822_repository:
+    name: nvidia-container-toolkit
+    types: [deb]
+    uris: "https://nvidia.github.io/libnvidia-container/stable/deb/amd64"
+    suites: ["/"]
+    signed_by: /etc/apt/keyrings/nvidia-container-toolkit.asc
+    enabled: true
+  become: true
+
+- name: Install nvidia-container-toolkit
+  ansible.builtin.apt:
+    name: nvidia-container-toolkit
+    state: present
+    update_cache: true
+  become: true
+
+- name: Check whether Docker already has the NVIDIA runtime configured
+  ansible.builtin.command: grep -q '"nvidia"' /etc/docker/daemon.json
+  register: nvidia_runtime_present
+  failed_when: false
+  changed_when: false
+
+- name: Configure Docker to use the NVIDIA runtime
+  ansible.builtin.command: nvidia-ctk runtime configure --runtime=docker
+  become: true
+  when: nvidia_runtime_present.rc != 0
+  notify: Restart docker
+
+# ── verify ───────────────────────────────────────────────────────────────────
+- name: Probe the GPU with nvidia-smi
+  ansible.builtin.command: nvidia-smi
+  register: nvidia_smi
+  failed_when: false
+  changed_when: false
+
+- name: Report GPU status
+  ansible.builtin.debug:
+    msg: >-
+      {{ 'nvidia-smi OK — driver loaded; the Docker nvidia runtime is ready for Frigate.'
+         if nvidia_smi.rc == 0
+         else 'Driver installed but nvidia-smi failed (rc=' ~ nvidia_smi.rc ~ '). A REBOOT is
+               normally required after a fresh driver install so the kernel module loads — reboot
+               the host, re-run this play to confirm, then (re)start the Frigate stack.' }}

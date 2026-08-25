@@ -33,6 +33,11 @@
   roles:
     - common
     - docker_host
+    # In-guest NVIDIA driver + container-toolkit + Docker runtime, needed for
+    # Frigate's tensorrt/CUDA path. Runs only where nvidia_gpu is true (prod
+    # ubuntu host); a no-op on GPU-less boxes like the test env.
+    - role: nvidia
+      when: nvidia_gpu | default(false)
     - mediamtx
     - pocketbase
     - nginx

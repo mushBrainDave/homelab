@@ -79,12 +79,21 @@ line) are fine to apply.
    DNS bootstrap note: pihole is itself a managed guest, so on a bare rebuild the `*.lan` names
    won't resolve until pihole is up. Converge `dns` first (or temporarily use IPs in the
    inventory), then the rest.
+   NVIDIA note: the `nvidia` role (runs on the ubuntu host because `nvidia_gpu: true` in the
+   inventory) installs the in-guest driver + `nvidia-container-toolkit` + Docker `nvidia` runtime
+   that Frigate's tensorrt/CUDA path needs — GPU passthrough alone does not. A **reboot** of the
+   ubuntu guest is normally required after the first driver install; re-run the play (or just
+   `nvidia-smi`) to confirm, then start Frigate. Defaults install `cuda-drivers` (latest
+   recommended branch — best for a brand-new card); pin a branch via `nvidia_driver_package` if
+   needed.
 8. **HAOS:** `./scripts/haos-vm-create.sh 103 15.2 BC:24:11:CF:95:10` (run on the node).
 9. **Restore data** from backups (pihole config, pocketbase `pb_data`, HAOS, Frigate media).
 
 ## Known non-reproducible-by-Terraform bits (by design)
 - **Physical disk passthrough** (ubuntu `scsi1`) — hardware-specific `/dev/disk/by-id`; step B6.
-- **GPU passthrough** — via the `frigate-gpu` resource mapping you create per-box (step B4).
+- **GPU passthrough** — the *mapping* is per-box (the `frigate-gpu` resource mapping, step B4);
+  the *in-guest* NVIDIA driver + container toolkit is now automated by the `nvidia` Ansible role
+  (step B7), so this is no longer a manual step beyond the mapping + a post-install reboot.
 - **Container TUN device** (`/dev/net/tun`) on pihole/mqtt — a raw LXC option bpg doesn't model;
   add manually if a container needs it (`pct set <id> -mp...`/`lxc.mount.entry`).
 - **HAOS** — scripted (`.qcow2.xz`), not declarative.

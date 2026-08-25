@@ -1,0 +1,21 @@
+---
+# Whether this host has an NVIDIA GPU passed through and should run the in-guest
+# NVIDIA stack. Off by default; set true on the GPU host in the inventory (prod
+# ubuntu VM). The role is ALSO gated on this var in site.yml, so it is a no-op
+# on GPU-less boxes (e.g. the test env).
+nvidia_gpu: false
+
+# Driver package from the official CUDA apt repo. `cuda-drivers` is a
+# meta-package that resolves to the repo's current recommended driver — the
+# safest choice for a brand-new card (e.g. Blackwell / RTX 5050) whose branch
+# may not be in the distro repos yet. To pin a specific branch instead, set e.g.
+# "nvidia-driver-575-open" (the -open flavor is recommended for Turing+).
+nvidia_driver_package: "cuda-drivers"
+
+# CUDA repo path segment for this distro, derived from the host's own version:
+#   Ubuntu 24.04 (Noble) -> ubuntu2404 ; 22.04 -> ubuntu2204.
+nvidia_cuda_repo_distro: "ubuntu{{ ansible_facts['distribution_version'] | replace('.', '') }}"
+
+# The cuda-keyring .deb registers the NVIDIA CUDA apt repo (adds the repo list +
+# signing key) — the modern, signed-by way to reach the driver packages.
+nvidia_cuda_keyring_url: "https://developer.download.nvidia.com/compute/cuda/repos/{{ nvidia_cuda_repo_distro }}/x86_64/cuda-keyring_1.1-1_all.deb"
