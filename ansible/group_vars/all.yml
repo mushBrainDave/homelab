@@ -1,6 +1,6 @@
 ---
 # Versions pinned for reproducible installs. Bump deliberately.
-mediamtx_version: "1.19.3"
+mediamtx_version: "1.21.1"
 pocketbase_version: "0.39.10"
 
 # Network facts (documentation + template use)

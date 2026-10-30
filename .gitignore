@@ -8,6 +8,10 @@ secrets/*.yaml
 *.pem
 age.key
 *.decrypted
+esphome/secrets.yaml
+
+# ---- ESPHome ----
+esphome/.esphome/
 
 # ---- Terraform ----
 .terraform/

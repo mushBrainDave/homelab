@@ -39,6 +39,7 @@ Cameras: Raspberry Pis (zero, pi5, …) publish RTSP → mediamtx → Frigate.
 | `ansible/` | OS + native services (mosquitto, mediamtx, nginx, pocketbase, pihole, host tweaks) | Ansible |
 | `docker/` | Container stacks (frigate, forms) | Docker Compose |
 | `homeassistant/` | HA config + rebuild notes | (appliance) |
+| `esphome/` | ESPHome device configs (garage door: DIY ratgdo, Security+ 2.0) | ESPHome |
 | `secrets/` | SOPS-encrypted secrets | SOPS + age |
 
 ## Prerequisites

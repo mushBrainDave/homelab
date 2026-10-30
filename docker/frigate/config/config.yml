@@ -39,7 +39,6 @@ record:
     retain:
       days: 3
       mode: motion
-
 snapshots:
   enabled: true
   timestamp: true
@@ -60,8 +59,26 @@ cameras:
       fps: 5
     motion:
       enabled: true
-
+  amlink:
+    ffmpeg:
+      hwaccel_args: preset-nvidia-h264
+      # Camera audio is G.711 A-law; transcode to AAC so recordings keep sound.
+      output_args:
+        record: preset-record-generic-audio-aac
+      # Password comes from FRIGATE_AMLINK_PASSWORD in the (gitignored) .env
+      # next to docker-compose.yml.
+      inputs:
+        - path: rtsp://admin:{FRIGATE_AMLINK_PASSWORD}@192.168.0.219/live0
+          roles: [record]
+        - path: rtsp://admin:{FRIGATE_AMLINK_PASSWORD}@192.168.0.219/live1
+          roles: [detect]
+    detect:
+      enabled: true
+      width: 640
+      height: 360
+      fps: 5
+    motion:
+      enabled: true
 detect:
   enabled: true
-
-version: 0.17-0
+version: 0.18-0
