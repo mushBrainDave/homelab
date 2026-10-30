@@ -66,6 +66,11 @@ resource "proxmox_virtual_environment_container" "pihole" {
     type             = "debian"
   }
 
+  # Boot after OPNsense (VM 105, order 1) so DNS comes up once the router is up.
+  startup {
+    order = 2
+  }
+
   unprivileged = true
 
   # Absorb the hand-built live container on import (MAC, exact IP, TUN device
