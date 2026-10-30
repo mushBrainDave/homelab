@@ -137,6 +137,10 @@ resource "proxmox_virtual_environment_vm" "ubuntu" {
   name      = "ubuntu"
   tags      = ["iac", "docker", "frigate"]
 
+  # Never let tofu reboot the main Docker/Frigate host on its own. Changes that
+  # need a restart stay "pending" in Proxmox until the VM is rebooted by hand.
+  reboot_after_update = false
+
   # Declared to MATCH live so import shows no diff on these.
   bios          = "ovmf"
   machine       = "q35"
