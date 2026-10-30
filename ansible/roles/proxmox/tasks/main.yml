@@ -17,3 +17,34 @@
     cmd: ethtool -K nic0 gso off gro off tso off tx off rx off sg off
   become: true
   changed_when: false
+
+# WAN bridge for the OPNsense VM on the Intel I226-V (enp131s0).
+# No host IP: pve must not be reachable from the Nokia side.
+# Lives in /etc/network/interfaces (not interfaces.d) so the Proxmox GUI lists it.
+# The GUI rewrites this file and may drop the block markers, so only add the
+# block when no vmbr1 stanza exists at all.
+- name: Check for an existing vmbr1 stanza
+  ansible.builtin.command:
+    cmd: grep -q '^iface vmbr1' /etc/network/interfaces
+  register: vmbr1_present
+  changed_when: false
+  check_mode: false   # read-only; must run in --check so the next task can use .rc
+  failed_when: vmbr1_present.rc > 1
+
+- name: Add vmbr1 (OPNsense WAN) bridge
+  ansible.builtin.blockinfile:
+    path: /etc/network/interfaces
+    insertbefore: '^source /etc/network/interfaces.d'
+    marker: "# {mark} ANSIBLE vmbr1 (OPNsense WAN)"
+    # Tab-indented to match the stanzas Proxmox writes.
+    block: "iface enp131s0 inet manual\n\nauto vmbr1\niface vmbr1 inet manual\n\tbridge-ports enp131s0\n\tbridge-stp off\n\tbridge-fd 0\n"
+    backup: true
+  become: true
+  when: vmbr1_present.rc == 1
+  register: vmbr1_block
+
+- name: Bring up vmbr1 (ifupdown2 only applies the diff; vmbr0 is untouched)
+  ansible.builtin.command:
+    cmd: /usr/sbin/ifreload -a
+  become: true
+  when: vmbr1_block is changed
