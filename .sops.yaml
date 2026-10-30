@@ -5,5 +5,5 @@
 #
 # Replace the placeholder recipient with your real age public key.
 creation_rules:
-  - path_regex: secrets/.*\.sops\.yaml$
+  - path_regex: secrets/.*\.sops\.(yaml|json)$
     age: age1dth4maa2ktkrz5xs30fg6djcjeqdtw7rxhvtac3vgx3u0e5jrceq4d0sy3
