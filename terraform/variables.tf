@@ -134,3 +134,22 @@ variable "gpu_mapping" {
   description = "Proxmox Datacenter PCI resource-mapping name for GPU passthrough on the prod ubuntu VM (create it under Datacenter > Resource Mappings). Empty = no passthrough (e.g. test)."
   default     = ""
 }
+
+# ── OPNsense router (VM 105, opnsense.tf) ───────────────────────────────────
+variable "opnsense_version" {
+  type        = string
+  description = "OPNsense release for the installer ISO (pkg.opnsense.org/releases/<version>/)."
+  default     = "26.7"
+}
+
+variable "opnsense_iso_sha256" {
+  type        = string
+  description = "SHA256 of OPNsense-<version>-dvd-amd64.iso.bz2, from the release's OPNsense-<version>-checksums-amd64.sha256. Update together with opnsense_version."
+  default     = "95cafedda6d5b22ce832e249dc2309110fbee19f813ad78cf28bb3d387186bfb"
+}
+
+variable "opnsense_lan_connected" {
+  type        = bool
+  description = "Plug in OPNsense's LAN NIC (vmbr0). Keep false until LAN has a non-clashing IP and its DHCP server is off. See opnsense.tf."
+  default     = false
+}
