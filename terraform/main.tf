@@ -126,7 +126,7 @@ resource "proxmox_virtual_environment_container" "mqtt" {
   }
 }
 
-# The ubuntu application host (VM 100). Prod: 9 vCPU, 20 GB RAM (balloon 8 GB),
+# The ubuntu application host (VM 100). Prod: 9 vCPU, 12 GB RAM (no balloon),
 # OVMF/q35, NVIDIA GPU passthrough for Frigate, boot disk + 32 GB data disk +
 # (manually attached) physical media disk. PROD-only — the test env builds the
 # fresh ubuntu-test VM 900 instead, so this is count-gated off there.
@@ -154,9 +154,13 @@ resource "proxmox_virtual_environment_vm" "ubuntu" {
     type  = "host"
   }
 
+  # Ballooning off (floating = 0): with GPU passthrough Proxmox pins ALL guest
+  # RAM for DMA, so a balloon only shrinks what the guest sees while the host
+  # still holds the full amount. Was 20 GB / balloon 8 GB until 2026-10-29: the
+  # guest saw ~7.5 GB (2.9 GB used) while the host held ~21 GB.
   memory {
-    dedicated = 20480
-    floating  = 8192
+    dedicated = 12288
+    floating  = 0
   }
 
   efi_disk {
