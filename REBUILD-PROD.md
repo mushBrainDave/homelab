@@ -72,6 +72,16 @@ line) are fine to apply.
 6. **Physical media disk** (Frigate storage): the 4 TB drive passthrough is hardware-specific and
    NOT created by Terraform. Attach it manually after apply:
    `qm set 100 --scsi1 /dev/disk/by-id/<the-new-drive>,backup=0`
+   **Backup SSD** (vzdump target, currently a 1 TB Samsung 860 QVO): format it once by hand.
+   The disk is found by the `pve-backup` label. This **erases the disk**, so use its by-id path:
+   ```bash
+   D=/dev/disk/by-id/<the-backup-ssd>
+   sgdisk --zap-all $D && sgdisk -n1:0:0 -t1:8300 -c1:pve-backup $D && udevadm settle
+   mkfs.ext4 -L pve-backup ${D}-part1
+   ```
+   The `proxmox` Ansible role (step 7) then mounts it at `/mnt/pve-backup`, adds it as the
+   `pve-backup` storage and points the backup jobs at it. To restore, copy the old `vzdump-*`
+   files into `/mnt/pve-backup/dump/`. If there's no `pve-backup` disk, the role skips this part.
 7. **Configure with Ansible:**
    ```bash
    cd ../ansible && ansible-playbook -i inventory.yml site.yml -K
@@ -91,6 +101,8 @@ line) are fine to apply.
 
 ## Known non-reproducible-by-Terraform bits (by design)
 - **Physical disk passthrough** (ubuntu `scsi1`) — hardware-specific `/dev/disk/by-id`; step B6.
+- **Backup SSD format** — erasing a disk is left manual on purpose; step B6. Ansible handles
+  the mount, storage and backup-job settings.
 - **GPU passthrough** — the *mapping* is per-box (the `frigate-gpu` resource mapping, step B4);
   the *in-guest* NVIDIA driver + container toolkit is now automated by the `nvidia` Ansible role
   (step B7), so this is no longer a manual step beyond the mapping + a post-install reboot.

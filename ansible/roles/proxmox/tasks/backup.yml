@@ -1,0 +1,102 @@
+---
+# Dedicated backup SSD for vzdump, so backups stop filling pve's root disk.
+#
+# Formatting is deliberately NOT done here (it would erase a disk). Prepare the
+# drive by hand once — see REBUILD-PROD.md — then this file:
+#   1. mounts it by label (nofail, so pve still boots without it),
+#   2. registers it as Proxmox "dir" storage for backups only,
+#   3. points every scheduled backup job at it.
+# If no disk carries the label, everything here is skipped.
+
+- name: Look for the backup disk by label
+  ansible.builtin.command:
+    cmd: "blkid -L {{ pve_backup_label }}"
+  register: pve_backup_dev
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  become: true
+
+- name: Note that the backup disk is missing
+  ansible.builtin.debug:
+    msg: >-
+      No filesystem labelled '{{ pve_backup_label }}' on this host; skipping
+      backup storage setup. Format the drive first (REBUILD-PROD.md).
+  when: pve_backup_dev.rc != 0
+
+- name: Backup disk is present
+  when: pve_backup_dev.rc == 0
+  become: true
+  block:
+    - name: Mount the backup disk
+      ansible.posix.mount:
+        path: "{{ pve_backup_mountpoint }}"
+        src: "LABEL={{ pve_backup_label }}"
+        fstype: ext4
+        opts: defaults,noatime,nofail
+        passno: 2
+        state: mounted
+
+    - name: Read current Proxmox storage definition
+      ansible.builtin.command:
+        cmd: "pvesh get /storage/{{ pve_backup_storage_id }} --output-format json"
+      register: pve_backup_storage
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    # is_mountpoint makes Proxmox refuse to write backups if the disk isn't
+    # mounted, instead of silently filling the root disk underneath it.
+    - name: Add backup storage
+      ansible.builtin.command:
+        cmd: >-
+          pvesm add dir {{ pve_backup_storage_id }}
+          --path {{ pve_backup_mountpoint }}
+          --content backup
+          --is_mountpoint yes
+          --prune-backups keep-last={{ pve_backup_keep_last }}
+      when: pve_backup_storage.rc != 0
+
+    - name: Keep backup storage settings in line
+      ansible.builtin.command:
+        cmd: >-
+          pvesm set {{ pve_backup_storage_id }}
+          --content backup
+          --is_mountpoint yes
+          --prune-backups keep-last={{ pve_backup_keep_last }}
+      vars:
+        current: "{{ pve_backup_storage.stdout | from_json }}"
+        prune: "{{ current['prune-backups'] | default('') }}"
+      when:
+        - pve_backup_storage.rc == 0
+        - >-
+          current.content | default('') != 'backup' or
+          current.is_mountpoint | default('') | string not in ['1', 'yes'] or
+          (prune if prune is string else prune.items() | map('join', '=') | join(','))
+          != 'keep-last=' ~ pve_backup_keep_last
+
+    - name: List scheduled backup jobs
+      ansible.builtin.command:
+        cmd: pvesh get /cluster/backup --output-format json
+      register: pve_backup_jobs
+      changed_when: false
+      check_mode: false
+
+    # A job-level prune setting would override the storage's keep-last, so
+    # set it on the job too. pvesh returns it as a map ({keep-last: '2'}),
+    # so flatten it to "keep-last=2" before comparing.
+    - name: Point backup jobs at the backup disk
+      ansible.builtin.command:
+        cmd: >-
+          pvesh set /cluster/backup/{{ item.id }}
+          --storage {{ pve_backup_storage_id }}
+          --prune-backups keep-last={{ pve_backup_keep_last }}
+      loop: "{{ pve_backup_jobs.stdout | from_json }}"
+      loop_control:
+        label: "{{ item.id }}"
+      vars:
+        prune: "{{ item['prune-backups'] | default('') }}"
+      when: >-
+        item.storage | default('') != pve_backup_storage_id or
+        (prune if prune is string else prune.items() | map('join', '=') | join(','))
+        != 'keep-last=' ~ pve_backup_keep_last

@@ -1,0 +1,10 @@
+---
+# Backup SSD (see tasks/backup.yml). The disk is found by its filesystem label,
+# so it works on any box where the drive was formatted with
+# `mkfs.ext4 -L pve-backup` (REBUILD-PROD.md). Hosts without such a disk
+# (e.g. the test box) skip these tasks.
+pve_backup_label: pve-backup
+pve_backup_mountpoint: /mnt/pve-backup
+pve_backup_storage_id: pve-backup
+# How many backups to keep per guest. The job runs weekly, so 8 = ~2 months.
+pve_backup_keep_last: 8

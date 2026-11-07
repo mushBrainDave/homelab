@@ -48,3 +48,6 @@
     cmd: /usr/sbin/ifreload -a
   become: true
   when: vmbr1_block is changed
+
+- name: Backup SSD (vzdump target)
+  ansible.builtin.import_tasks: backup.yml
