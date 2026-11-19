@@ -5,6 +5,7 @@
 # "Corrupted MAC on input" SSH corruption to guests (notably the HAOS VM).
 # Applies at boot via a post-up hook on the vmbr0 bridge.
 - name: Persist nic0 offload-disable on vmbr0
+  when: pve_nic0_offload_fix | bool
   ansible.builtin.lineinfile:
     path: /etc/network/interfaces
     insertafter: '^iface vmbr0 inet'
@@ -13,13 +14,15 @@
   become: true
 
 - name: Apply offload settings now (idempotent, harmless if already set)
+  when: pve_nic0_offload_fix | bool
   ansible.builtin.command:
     cmd: ethtool -K nic0 gso off gro off tso off tx off rx off sg off
   become: true
   changed_when: false
 
-# WAN bridge for the OPNsense VM on the Intel I226-V (enp131s0).
-# No host IP: pve must not be reachable from the Nokia side.
+# WAN bridge for the OPNsense VM on the port named by pve_wan_nic
+# (pve: Intel I226-V enp131s0; pvemini: nic1, used only during failover).
+# No host IP: the host must not be reachable from the Nokia side.
 # Lives in /etc/network/interfaces (not interfaces.d) so the Proxmox GUI lists it.
 # The GUI rewrites this file and may drop the block markers, so only add the
 # block when no vmbr1 stanza exists at all.
@@ -31,13 +34,24 @@
   check_mode: false   # read-only; must run in --check so the next task can use .rc
   failed_when: vmbr1_present.rc > 1
 
+# The installer writes "iface <nic> inet manual" for ports it saw (e.g. nic1 on
+# pvemini) but not for ones added later (enp131s0 on pve). Only add the line
+# when it's missing; a second copy makes ifreload warn about a duplicate.
+- name: Check whether the WAN port already has an iface stanza
+  ansible.builtin.command:
+    cmd: grep -qE '^iface {{ pve_wan_nic }}( |$)' /etc/network/interfaces
+  register: wan_nic_present
+  changed_when: false
+  check_mode: false
+  failed_when: wan_nic_present.rc > 1
+
 - name: Add vmbr1 (OPNsense WAN) bridge
   ansible.builtin.blockinfile:
     path: /etc/network/interfaces
     insertbefore: '^source /etc/network/interfaces.d'
     marker: "# {mark} ANSIBLE vmbr1 (OPNsense WAN)"
     # Tab-indented to match the stanzas Proxmox writes.
-    block: "iface enp131s0 inet manual\n\nauto vmbr1\niface vmbr1 inet manual\n\tbridge-ports enp131s0\n\tbridge-stp off\n\tbridge-fd 0\n"
+    block: "{{ '' if wan_nic_present.rc == 0 else 'iface ' ~ pve_wan_nic ~ ' inet manual\n\n' }}auto vmbr1\niface vmbr1 inet manual\n\tbridge-ports {{ pve_wan_nic }}\n\tbridge-stp off\n\tbridge-fd 0\n"
     backup: true
   become: true
   when: vmbr1_present.rc == 1

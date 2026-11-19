@@ -11,6 +11,13 @@ all:
         pve:
           ansible_host: pve.lan
           ansible_user: mushbrainssh
+          pve_wan_nic: enp131s0        # Intel I226-V -> Nokia
+        pvemini:
+          ansible_host: pvemini.lan    # mini PC, 192.168.0.3, always-on standby node
+          ansible_user: mushbrainssh
+          pve_wan_nic: nic1            # WAN cable moved here by hand on failover
+          pve_nic0_offload_fix: false
+          ansible_ssh_private_key_file: ~/.ssh/pve_ed25519  # only key authorized on pvemini
 
     docker_hosts:
       hosts:

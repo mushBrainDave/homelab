@@ -8,3 +8,11 @@ pve_backup_mountpoint: /mnt/pve-backup
 pve_backup_storage_id: pve-backup
 # How many backups to keep per guest. The job runs weekly, so 8 = ~2 months.
 pve_backup_keep_last: 8
+
+# Physical port that carries the OPNsense WAN (the Nokia cable). vmbr1 is
+# bridged to it. Set per host in inventory.yml (pve: enp131s0, pvemini: nic1).
+pve_wan_nic: enp131s0
+
+# Turn off NIC hardware offloads on nic0. This works around the Core Ultra
+# onboard NIC corrupting SSH traffic on pve; other boxes don't need it.
+pve_nic0_offload_fix: true
