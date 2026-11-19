@@ -19,6 +19,7 @@ create_test_vm = false # prod builds the real ubuntu VM 100 (not the test VM 900
 pihole_ip   = "192.168.0.50/24"
 mqtt_ip     = "192.168.0.49/24"
 ubuntu_ip   = "192.168.0.183/24"
+omada_ip    = "192.168.0.4/24" # LXC 106, Omada controller
 lan_gateway = "192.168.0.1"
 dns_servers = ["192.168.0.1"]
 
@@ -34,3 +35,4 @@ ci_ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA6dntc1oqA+iGUhgL93IBJ
 #   pveam update && pveam download local debian-12-standard_12.12-1_amd64.tar.zst
 # (Ignored when adopting existing prod — operating_system is in ignore_changes.)
 lxc_template = "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
+opnsense_installer = false # installed; ISO deleted from pve

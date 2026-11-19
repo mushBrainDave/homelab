@@ -1,0 +1,7 @@
+---
+- name: Restart omada
+  ansible.builtin.command:
+    cmd: docker compose up -d --force-recreate
+    chdir: "{{ omada_dir }}"
+  become: true
+  changed_when: true

@@ -28,6 +28,24 @@
     - common
     - pihole
 
+- name: Omada controller
+  hosts: controllers
+  # The Debian LXC template ships without sudo (common's sudoers drop-in
+  # needs visudo) and may lack python3.
+  gather_facts: false
+  pre_tasks:
+    - name: Bootstrap python3 and sudo
+      ansible.builtin.raw: >-
+        command -v python3 >/dev/null && command -v sudo >/dev/null ||
+        (apt-get update && apt-get install -y python3 sudo)
+      register: omada_bootstrap
+      changed_when: "'Setting up' in omada_bootstrap.stdout"
+    - name: Gather facts
+      ansible.builtin.setup:
+  roles:
+    - common
+    - omada
+
 - name: Ubuntu application host
   hosts: docker_hosts
   roles:

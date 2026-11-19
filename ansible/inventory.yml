@@ -35,5 +35,11 @@ all:
         pihole:
           ansible_host: pihole.lan     # LXC 101 / 192.168.0.50
 
+    controllers:
+      hosts:
+        omada:
+          ansible_host: 192.168.0.4    # LXC 106 / omada.lan (add the Pi-hole record)
+          ansible_user: root           # fresh LXC: only root, with the desktop key from Terraform
+
     # Home Assistant OS (VM 103 / 192.168.0.133) is an appliance — not managed
     # by Ansible. See homeassistant/README.md.

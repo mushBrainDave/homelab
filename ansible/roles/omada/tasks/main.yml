@@ -1,0 +1,76 @@
+---
+# Docker CE (Debian repo) + the Omada controller as a compose stack.
+- name: Install prerequisites
+  ansible.builtin.apt:
+    name: [ca-certificates, curl]
+    state: present
+    update_cache: true
+  become: true
+
+- name: Add Docker GPG key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/debian/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+  become: true
+
+- name: Add Docker apt repo
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: [deb]
+    uris: "https://download.docker.com/linux/debian"
+    suites: ["{{ ansible_facts['distribution_release'] }}"]
+    components: [stable]
+    architectures: [amd64]
+    signed_by: /etc/apt/keyrings/docker.asc
+    state: present
+    enabled: true
+  become: true
+
+- name: Install Docker engine + compose plugin
+  ansible.builtin.apt:
+    name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
+    state: present
+    update_cache: true
+  become: true
+
+- name: Create controller directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ omada_dir }}"
+    - "{{ omada_dir }}/data"
+    - "{{ omada_dir }}/logs"
+  become: true
+
+- name: Deploy compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ omada_dir }}/docker-compose.yml"
+    mode: "0644"
+  become: true
+  notify: Restart omada
+
+# Apply a compose change (recreate) now, not after the readiness wait below.
+- name: Apply pending restarts
+  ansible.builtin.meta: flush_handlers
+
+- name: Start the controller
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: "{{ omada_dir }}"
+  become: true
+  register: omada_up
+  changed_when: "'Started' in omada_up.stderr or 'Created' in omada_up.stderr"
+
+- name: Wait for the web UI (first start takes a few minutes)
+  ansible.builtin.uri:
+    url: https://127.0.0.1:8043/
+    validate_certs: false
+    status_code: [200, 302]
+  register: omada_web
+  until: omada_web.status in [200, 302]
+  retries: 40
+  delay: 15

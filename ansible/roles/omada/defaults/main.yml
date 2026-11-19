@@ -1,0 +1,8 @@
+---
+# Omada Software Controller (LXC 106 / omada.lan / 192.168.0.4).
+# Image: https://hub.docker.com/r/mbentley/omada-controller
+# Pin a minor version; bump deliberately and take a controller backup first
+# (Settings > Maintenance > Backup) — upgrades migrate the database one way.
+omada_image: "mbentley/omada-controller:6.3"
+omada_dir: /opt/omada
+omada_tz: "America/Chicago"

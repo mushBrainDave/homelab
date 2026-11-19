@@ -20,6 +20,8 @@ esphome/.esphome/
 *.tfvars
 !*.tfvars.example
 crash.log
+*.plan
+*.tfplan
 
 # ---- Ansible ----
 *.retry

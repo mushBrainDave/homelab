@@ -148,8 +148,20 @@ variable "opnsense_iso_sha256" {
   default     = "95cafedda6d5b22ce832e249dc2309110fbee19f813ad78cf28bb3d387186bfb"
 }
 
+variable "opnsense_installer" {
+  type        = bool
+  description = "Download the OPNsense installer ISO and attach it to VM 105. Needed only for a fresh install; false on prod."
+  default     = true
+}
+
 variable "opnsense_lan_connected" {
   type        = bool
   description = "Plug in OPNsense's LAN NIC (vmbr0). Keep false until LAN has a non-clashing IP and its DHCP server is off. See opnsense.tf."
   default     = false
+}
+
+variable "omada_ip" {
+  type        = string
+  description = "Static CIDR for the Omada controller container (e.g. 192.168.0.4/24), \"dhcp\", or \"\" to not build it."
+  default     = ""
 }

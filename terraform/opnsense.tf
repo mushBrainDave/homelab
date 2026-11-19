@@ -17,7 +17,11 @@
 # (e.g. 192.168.0.253) and its DHCP server is OFF.
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Only needed to install OPNsense. Prod sets opnsense_installer = false: the ISO
+# was deleted from pve after the install, and re-fetching 2 GB is pointless.
 resource "proxmox_virtual_environment_download_file" "opnsense_iso" {
+  count = var.opnsense_installer ? 1 : 0
+
   content_type            = "iso"
   datastore_id            = "local"
   node_name               = var.pve_node
@@ -56,7 +60,7 @@ resource "proxmox_virtual_environment_vm" "opnsense" {
   }
 
   cpu {
-    cores = 2
+    cores = 3
     type  = "host"
   }
 
@@ -75,7 +79,7 @@ resource "proxmox_virtual_environment_vm" "opnsense" {
   }
 
   cdrom {
-    file_id   = proxmox_virtual_environment_download_file.opnsense_iso.id
+    file_id   = var.opnsense_installer ? proxmox_virtual_environment_download_file.opnsense_iso[0].id : "none"
     interface = "ide2"
   }
 
