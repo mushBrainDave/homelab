@@ -20,9 +20,18 @@ after a switch, with no ARP or DHCP-lease churn.
 
 1. Stop the live router (skip this if `pve` is already down):
    `ssh pve` → `sudo qm shutdown 105`
-2. Move the Nokia cable from `pve`'s I226-V port to `pvemini`'s **WAN port**.
-   The LAN cable is in `nic0`, so the WAN cable goes in the other jack (`nic1`).
+2. Nothing to recable: since 2026-11-21 `pvemini`'s `nic1` has its own
+   permanent cable to the Nokia, and `nic0` goes to the ES208GP. Both WAN
+   cables stay plugged in. That's safe because only one VM 105 runs at a time.
 3. `ssh pvemini.root qm start 105`
+
+   > **While [CARP-PLAN.md](CARP-PLAN.md) is half-done (since step 1),** VM 105
+   > on pvemini has both NICs set `link_down=1` and new MACs, so it comes up with
+   > no network. Bring the links up before (or right after) starting it:
+   > `ssh pvemini.root "qm set 105 --net0 virtio=BC:24:11:10:C4:DE,bridge=vmbr1,firewall=0 --net1 virtio=BC:24:11:BA:AB:86,bridge=vmbr0,firewall=0"`.
+   > The new WAN MAC means the Nokia may hand it a different `192.168.1.x`, and
+   > devices may need a minute to re-learn `.1`'s MAC. After failing back, set
+   > `link_down=1` again, or finish the CARP plan.
 4. Wait about a minute, then check: `ping 192.168.0.1`, and open a website.
 
 Pi-hole (CT 101) still lives on `pve`. While `pve` is down, DNS will fail unless
@@ -31,8 +40,7 @@ OPNsense hands out a fallback DNS server.
 ## Fail back to pve
 
 1. `ssh pvemini.root qm shutdown 105`
-2. Move the Nokia cable back to `pve`.
-3. Start the router on `pve`: `sudo qm start 105`. It also starts at boot.
+2. Start the router on `pve`: `sudo qm start 105`. It also starts at boot.
 
 ## Refresh the standby copy
 

@@ -1,6 +1,14 @@
 # Plan: OPNsense CARP high availability (pve + pvemini)
 
-**Status:** plan only, nothing changed yet. Written 2026-11-16.
+**Status (checked 2026-11-21):** in progress. The pvemini `nic1` → Nokia
+cable is in, and step 1 is done: router B has new MACs (`BC:24:11:10:C4:DE`
+WAN, `BC:24:11:BA:AB:86` LAN), both links are down, and it's tagged
+`carp-backup`. The VM is stopped. Steps 2–6 are not done: `.252`/`.253` don't
+answer, there's no CARP traffic on the LAN, and router A still holds
+`192.168.0.1` directly. Written 2026-11-16.
+
+> While this is half-done, the cold standby in
+> [OPNSENSE-STANDBY.md](OPNSENSE-STANDBY.md) doesn't work as written. See its note.
 **Goal:** when `pve` reboots, the router on `pvemini` takes over in a few seconds,
 with no cable moving and no stale standby copy. Replaces the manual cold
 standby in [OPNSENSE-STANDBY.md](OPNSENSE-STANDBY.md) once done.

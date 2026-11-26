@@ -69,8 +69,16 @@ api:
     key: !secret api_encryption_key
 
 wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
+  # Two networks during the Archer -> Omada EAP720 move. The board scans and
+  # joins whichever is visible, preferring the higher priority (Omada).
+  # Drop the Archer entry once its Wi-Fi is retired.
+  networks:
+    - ssid: !secret wifi_ssid_omada
+      password: !secret wifi_password_omada
+      priority: 2
+    - ssid: !secret wifi_ssid
+      password: !secret wifi_password
+      priority: 1
   ap:
     ssid: "garage-door-fallback"
 
